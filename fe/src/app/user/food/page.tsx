@@ -2,8 +2,8 @@
 
 import { useState, type CSSProperties } from "react";
 
-import { AppSidebar } from "../../components/app-sidebar";
-import { SiteHeader } from "../../components/site-header";
+import { AppSidebar } from "@/components/app-sidebar";
+import { SiteHeader } from "@/components/site-header";
 import { FoodHero } from "./components/food-hero";
 import { MenuSection } from "./components/menu-section";
 import { menuSections } from "./components/menu-data";

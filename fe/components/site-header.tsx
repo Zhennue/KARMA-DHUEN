@@ -10,7 +10,7 @@ type SiteHeaderProps = { title: string };
 export function SiteHeader({ title }: SiteHeaderProps) {
   const { cart } = useCart();
   return (
-    <header className="flex h-(--header-height) shrink-0 items-center border-b border-white/5 bg-[#110b09]/80 backdrop-blur-md transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
+    <header className="fixed top-0 left-0 z-50 flex h-(--header-height) w-full shrink-0 items-center border-b border-white/5 bg-[#110b09]/80 backdrop-blur-md transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
       {" "}
       <div className="flex w-full items-center justify-between px-4 lg:px-6">
         {" "}
@@ -38,13 +38,13 @@ export function SiteHeader({ title }: SiteHeaderProps) {
         </div>{" "}
         {/* RIGHT SIDE CART */}{" "}
         <Link
-          href="/cart"
-          className="relative flex h-15 w-10 items-center justify-center rounded border border-white/10 text-white transition-all hover:border-[#c9723f]/40 hover:bg-[#c9723f]/10"
+          href="/user/cart"
+          className="relative flex h-11 w-10 items-center justify-center rounded border border-white/10 text-white transition-all hover:border-[#c9723f]/40 hover:bg-[#c9723f]/10"
         >
           {" "}
           <ShoppingCart className="h-5 w-5" /> {/* CART COUNT */}{" "}
           {cart.length > 0 && (
-            <div className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#c9723f] px-1 text-[10px] font-bold text-white">
+            <div className="absolute -right-1 top-0 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#c9723f] px-1 text-[10px] font-bold text-white">
               {" "}
               {cart.length}{" "}
             </div>

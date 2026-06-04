@@ -36,7 +36,7 @@ const sections = [
 
 export function FoodHero() {
   return (
-    <section className="space-y-4">
+    <section className="space-y-4 mt-8">
       <div className="flex gap-3 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         {sections.map((section) => (
           <div

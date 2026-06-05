@@ -143,9 +143,9 @@ const data = {
 
   documents: [
     {
-      name: "Data Library",
-      url: "#",
-      icon: IconDatabase,
+      name: "Users",
+      url: "/admin/users",
+      icon: IconUsers,
     },
     {
       name: "Reports",

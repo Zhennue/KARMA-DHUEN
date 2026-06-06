@@ -4,15 +4,19 @@ import * as React from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
+import { createClient } from "@/utils/supabase/client";
+
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
 import {
   Field,
   FieldDescription,
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field";
+
 import { Input } from "@/components/ui/input";
 
 import {
@@ -35,21 +39,13 @@ export function LoginForm({
 }: React.ComponentProps<"div">) {
   const router = useRouter();
 
-  const ADMIN_NUMBER = "17458094";
-  const KITCHEN_NUMBER = "17458095";
-  const DEFAULT_PASSWORD = "DrukPass@123";
-
   const [countryCode, setCountryCode] =
     React.useState<PhoneCountryCode>("bt");
 
   const [phoneNumber, setPhoneNumber] = React.useState("");
   const [password, setPassword] = React.useState("");
 
-  const [showPassword, setShowPassword] = React.useState(false);
-
-  const [role, setRole] = React.useState<
-    "admin" | "kitchen" | "user"
-  >("user");
+  const [showPasswordField, setShowPasswordField] = React.useState(false);
 
   const [error, setError] = React.useState<string | null>(null);
 
@@ -64,69 +60,96 @@ export function LoginForm({
       limitPhoneNumber(currentValue, nextCountry),
     );
 
+    setShowPasswordField(false);
+    setPassword("");
     setError(null);
-    setShowPassword(false);
-    setRole("user");
   }
 
-  function handlePhoneNumberChange(
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) {
-    const nextValue = limitPhoneNumber(
-      event.target.value,
-      countryCode,
-    );
+  async function checkUserRole(phone: string, nationality: string) {
+    const supabase = createClient();
 
-    setPhoneNumber(nextValue);
-    setError(null);
+    const { data: user } = await supabase
+      .from("users")
+      .select("role")
+      .eq("phone_number", phone)
+      .eq("nationality", nationality)
+      .single();
 
-    if (countryCode === "bt") {
-      if (nextValue === ADMIN_NUMBER) {
-        setShowPassword(true);
-        setRole("admin");
-      } else if (nextValue === KITCHEN_NUMBER) {
-        setShowPassword(true);
-        setRole("kitchen");
-      } else {
-        setShowPassword(false);
-        setRole("user");
-      }
+    if (user?.role === "admin" || user?.role === "kitchen") {
+      setShowPasswordField(true);
     } else {
-      setShowPassword(false);
-      setRole("user");
+      setShowPasswordField(false);
+      setPassword("");
     }
   }
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const validationError = validatePhoneNumber(
-      countryCode,
-      phoneNumber,
-    );
+    setError(null);
+
+    const validationError = validatePhoneNumber(countryCode, phoneNumber);
 
     if (validationError) {
       setError(validationError);
       return;
     }
 
-    if (showPassword) {
-      if (password !== DEFAULT_PASSWORD) {
+    const supabase = createClient();
+
+    // remove spaces/symbols
+    const cleanPhone = phoneNumber.replace(/\D/g, "");
+
+    // find existing user
+    const { data: user, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("phone_number", cleanPhone)
+      .eq("nationality", countryCode)
+      .single();
+
+    // if user does not exist -> create normal user
+    if (error || !user) {
+      const { error: insertError } = await supabase.from("users").insert({
+        phone_number: cleanPhone,
+        nationality: countryCode,
+        role: "user",
+      });
+
+      if (insertError) {
+        setError("Failed to create user");
+        return;
+      }
+
+      router.push("/user/food");
+      return;
+    }
+
+    // admin/kitchen needs password
+    if (user.role === "admin" || user.role === "kitchen") {
+      if (!password) {
+        setError("Password required");
+        return;
+      }
+
+      if (user.password !== password) {
         setError("Incorrect password");
-        return;
-      }
-
-      if (role === "admin") {
-        router.push("/admin/dashboard");
-        return;
-      }
-
-      if (role === "kitchen") {
-        router.push("/kitchen/dashboard");
         return;
       }
     }
 
+    // role redirect
+    if (user.role === "admin") {
+      router.push("/admin/dashboard");
+      return;
+    }
+
+    if (user.role === "kitchen") {
+      router.push("/kitchen/dashboard");
+      return;
+    }
+
+    // normal user
     router.push("/user/food");
   }
 
@@ -139,7 +162,7 @@ export function LoginForm({
           </CardTitle>
 
           <div className="mt-4 flex items-center justify-center">
-            <div className="relative h-40 w-40 overflow-hidden rounded-full border border-white/20 bg-white/10 p-2 shadow-[0_20px_50px_rgba(0,0,0,0.35)] ring-1 ring-white/10 backdrop-blur-sm">
+            <div className="relative h-40 w-40 overflow-hidden rounded-full border border-white/50 bg-white/10 p-2 shadow-[0_20px_50px_rgba(0,0,0,0.35)] ring-1 ring-white/10 backdrop-blur-sm">
               <Image
                 src="/logo.png"
                 alt="Karma Dhuen logo"
@@ -154,14 +177,11 @@ export function LoginForm({
         <CardContent>
           <form onSubmit={handleSubmit}>
             <FieldGroup>
-
               {/* PHONE NUMBER */}
               <Field>
-                <FieldLabel htmlFor="phone" className="text-white/90">
-                  Phone Number
-                </FieldLabel>
+                <FieldLabel htmlFor="phone">Phone Number</FieldLabel>
 
-                <div className="flex overflow-hidden rounded-md border border-input shadow-xs transition-[color,box-shadow] focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 dark:bg-input/30">
+                <div className="flex overflow-hidden rounded-md border border-input shadow-xs transition-[color,box-shadow] focus-within:border-ring dark:bg-input/30">
                   <Select
                     value={countryCode}
                     onValueChange={(value: PhoneCountryCode) =>
@@ -205,9 +225,7 @@ export function LoginForm({
                                 className="h-4 w-auto object-cover"
                               />
                             ) : (
-                              <span aria-hidden="true">
-                                {option.flag}
-                              </span>
+                              <span aria-hidden="true">{option.flag}</span>
                             )}
 
                             <span>{option.dialCode}</span>
@@ -226,12 +244,29 @@ export function LoginForm({
                       selectedCountry?.phoneLength ?? ""
                     } digits`}
                     value={phoneNumber}
-                    onChange={handlePhoneNumberChange}
+                    onChange={async (event) => {
+                      const nextValue = limitPhoneNumber(
+                        event.target.value,
+                        countryCode,
+                      );
+
+                      setPhoneNumber(nextValue);
+                      setError(null);
+
+                      const cleanPhone = nextValue.replace(/\D/g, "");
+
+                      if (
+                        cleanPhone.length ===
+                        selectedCountry?.phoneLength
+                      ) {
+                        await checkUserRole(cleanPhone, countryCode);
+                      } else {
+                        setShowPasswordField(false);
+                        setPassword("");
+                      }
+                    }}
                     aria-invalid={Boolean(error)}
-
-                    // 🔥 ONLY FIX (DO NOT TOUCH LOGIC)
-                    required={role !== "user"}
-
+                    required
                     className="h-9 flex-1 border-0 shadow-none"
                   />
                 </div>
@@ -243,15 +278,8 @@ export function LoginForm({
                 </FieldDescription>
               </Field>
 
-              {/* PASSWORD */}
-              <div
-                className={cn(
-                  "overflow-visible transition-all duration-500 ease-in-out",
-                  showPassword
-                    ? "max-h-40 translate-y-0 opacity-100 blur-0"
-                    : "max-h-0 -translate-y-2 opacity-0 blur-sm",
-                )}
-              >
+              {/* PASSWORD ONLY FOR ADMIN/KITCHEN */}
+              {showPasswordField && (
                 <Field className="pt-2">
                   <FieldLabel htmlFor="password" className="text-white/90">
                     Password
@@ -260,14 +288,17 @@ export function LoginForm({
                   <Input
                     id="password"
                     type="password"
-                    placeholder={`Enter ${role} password`}
+                    placeholder="Enter password"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required={showPassword}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      setError(null);
+                    }}
+                    required
                     className="transition-all duration-300"
                   />
                 </Field>
-              </div>
+              )}
 
               {/* ERROR */}
               {error ? (
@@ -282,12 +313,9 @@ export function LoginForm({
                   type="submit"
                   className="w-full transition-all duration-500"
                 >
-                  {showPassword
-                    ? `Login as ${role}`
-                    : "Start for free"}
+                  Login
                 </Button>
               </Field>
-
             </FieldGroup>
           </form>
         </CardContent>

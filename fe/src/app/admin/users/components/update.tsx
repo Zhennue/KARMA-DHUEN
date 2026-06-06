@@ -29,12 +29,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { IconPhone, IconLock, IconEdit } from "@tabler/icons-react";
+import {
+  IconPhone,
+  IconLock,
+  IconEdit,
+  IconAlertCircle,
+} from "@tabler/icons-react";
 
 import {
   limitPhoneNumber,
   phoneCountryOptions,
   type PhoneCountryCode,
+  validatePhoneNumber,
+  getCleanPhoneForDB,
 } from "../../../../app/(auth)/login/components/status-code-validation";
 
 interface UpdateProps {
@@ -69,11 +76,15 @@ export function Update({ open, onOpenChange, user, onSubmit }: UpdateProps) {
 
   const [password, setPassword] = React.useState("");
 
+  const [error, setError] = React.useState<string | null>(null);
+
   React.useEffect(() => {
     if (user) {
+      setCountryCode(user.nationality);
       setPhone(user.phone_number);
       setRole(user.role);
-      setCountryCode(user.nationality);
+      setPassword("");
+      setError(null);
     }
   }, [user]);
 
@@ -83,24 +94,51 @@ export function Update({ open, onOpenChange, user, onSubmit }: UpdateProps) {
     (option) => option.value === countryCode,
   );
 
+  const showPassword = role === "admin" || role === "kitchen";
+
+  const handleUpdate = () => {
+    setError(null);
+
+    const validationError = validatePhoneNumber(countryCode, phone);
+
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    if (showPassword && !password.trim()) {
+      setError("Password required for admin or kitchen.");
+      return;
+    }
+
+    onSubmit(user.id, {
+      nationality: countryCode,
+      phone_number: getCleanPhoneForDB(phone),
+      role,
+      password: showPassword ? password : null,
+    });
+
+    onOpenChange(false);
+  };
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="w-full border-l border-white/10 bg-zinc-950 text-white sm:max-w-md"
+        className="w-full border-l border-white/10 bg-[#09090b] text-white sm:max-w-md"
       >
-        <SheetHeader className="space-y-3 border-b border-white/10 pb-5">
-          <div className="flex items-center gap-3">
-            <div className="rounded-xl border border-white/10 bg-white/5 p-2">
-              <IconEdit className="size-5 text-white" />
+        <SheetHeader className="border-b border-white/10 pb-5">
+          <div className="flex items-center gap-4">
+            <div className="flex size-12 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04]">
+              <IconEdit className="size-6 text-white" />
             </div>
 
             <div>
-              <SheetTitle className="text-2xl font-semibold text-white">
+              <SheetTitle className="text-left text-2xl font-semibold text-white">
                 Update User
               </SheetTitle>
 
-              <SheetDescription className="text-white/50">
+              <SheetDescription className="mt-1 text-left text-white/45">
                 Modify user information and permissions.
               </SheetDescription>
             </div>
@@ -116,25 +154,26 @@ export function Update({ open, onOpenChange, user, onSubmit }: UpdateProps) {
 
                 <Select
                   value={countryCode}
-                  onValueChange={(value: PhoneCountryCode) =>
-                    setCountryCode(value)
-                  }
+                  onValueChange={(value: PhoneCountryCode) => {
+                    setCountryCode(value);
+                    setError(null);
+                  }}
                 >
-                  <SelectTrigger className="border-white/10 bg-white/5 text-white">
+                  <SelectTrigger className="h-11 border-white/10 bg-white/[0.03] text-white">
                     <SelectValue />
                   </SelectTrigger>
 
                   <SelectContent className="border-white/10 bg-zinc-950 text-white">
                     {phoneCountryOptions.map((option) => (
                       <SelectItem key={option.value} value={option.value}>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-3">
                           {option.flagSrc ? (
                             <Image
                               src={option.flagSrc}
                               alt={option.label}
                               width={20}
                               height={14}
-                              className="h-4 w-auto object-cover"
+                              className="h-4 w-auto rounded-sm object-cover"
                             />
                           ) : (
                             <span>{option.flag}</span>
@@ -153,18 +192,21 @@ export function Update({ open, onOpenChange, user, onSubmit }: UpdateProps) {
                 <Label className="text-white/80">Phone Number</Label>
 
                 <div className="relative">
-                  <IconPhone className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-white/40" />
+                  <IconPhone className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-white/35" />
 
                   <Input
-                    className="border-white/10 bg-white/5 pl-9 text-white"
                     value={limitPhoneNumber(phone, countryCode)}
-                    onChange={(e) =>
-                      setPhone(limitPhoneNumber(e.target.value, countryCode))
-                    }
+                    onChange={(e) => {
+                      setPhone(limitPhoneNumber(e.target.value, countryCode));
+
+                      setError(null);
+                    }}
+                    placeholder={`Enter ${selectedCountry?.phoneLength} digits`}
+                    className="h-11 border-white/10 bg-white/[0.03] pl-10 text-white placeholder:text-white/30"
                   />
                 </div>
 
-                <p className="text-xs text-white/40">
+                <p className="text-xs text-white/35">
                   {selectedCountry?.label} numbers require{" "}
                   {selectedCountry?.phoneLength} digits.
                 </p>
@@ -172,10 +214,19 @@ export function Update({ open, onOpenChange, user, onSubmit }: UpdateProps) {
 
               {/* ROLE */}
               <div className="space-y-2">
-                <Label className="text-white/80">User Role</Label>
+                <Label className="text-white/80">Role</Label>
 
-                <Select value={role} onValueChange={setRole}>
-                  <SelectTrigger className="border-white/10 bg-white/5 text-white">
+                <Select
+                  value={role}
+                  onValueChange={(value) => {
+                    setRole(value);
+
+                    if (value === "user") {
+                      setPassword("");
+                    }
+                  }}
+                >
+                  <SelectTrigger className="h-11 border-white/10 bg-white/[0.03] text-white">
                     <SelectValue />
                   </SelectTrigger>
 
@@ -206,36 +257,41 @@ export function Update({ open, onOpenChange, user, onSubmit }: UpdateProps) {
               </div>
 
               {/* PASSWORD */}
-              <div className="space-y-2">
-                <Label className="text-white/80">Password</Label>
+              {showPassword && (
+                <div className="space-y-2">
+                  <Label className="text-white/80">Password</Label>
 
-                <div className="relative">
-                  <IconLock className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-white/40" />
+                  <div className="relative">
+                    <IconLock className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-white/35" />
 
-                  <Input
-                    type="password"
-                    className="border-white/10 bg-white/5 pl-9 text-white placeholder:text-white/35"
-                    placeholder="Enter new password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
+                    <Input
+                      type="password"
+                      placeholder="Enter new password"
+                      className="h-11 border-white/10 bg-white/[0.03] pl-10 text-white placeholder:text-white/30"
+                      value={password}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        setError(null);
+                      }}
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* ERROR */}
+              {error && (
+                <div className="flex items-start gap-2 rounded-xl border border-red-500/20 bg-red-500/10 p-3">
+                  <IconAlertCircle className="mt-0.5 size-4 text-red-400" />
+
+                  <p className="text-sm text-red-300">{error}</p>
+                </div>
+              )}
             </div>
           </Card>
 
           <Button
             className="h-11 w-full border border-white/10 bg-white text-black hover:bg-white/90"
-            onClick={() => {
-              onSubmit(user.id, {
-                nationality: countryCode,
-                phone_number: phone.replace(/\D/g, ""),
-                role,
-                password,
-              });
-
-              onOpenChange(false);
-            }}
+            onClick={handleUpdate}
           >
             Save Changes
           </Button>

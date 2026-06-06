@@ -19,6 +19,8 @@ import { Label } from "@/components/ui/label";
 
 import { Badge } from "@/components/ui/badge";
 
+import { Card } from "@/components/ui/card";
+
 import {
   Select,
   SelectContent,
@@ -27,19 +29,20 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { Card } from "@/components/ui/card";
-
 import {
   IconPhone,
   IconShield,
   IconLock,
   IconUserPlus,
+  IconAlertCircle,
 } from "@tabler/icons-react";
 
 import {
   limitPhoneNumber,
   phoneCountryOptions,
   type PhoneCountryCode,
+  validatePhoneNumber,
+  getCleanPhoneForDB,
 } from "../../../../app/(auth)/login/components/status-code-validation";
 
 interface AddSectionProps {
@@ -64,16 +67,34 @@ export function AddSection({ open, onOpenChange, onSubmit }: AddSectionProps) {
 
   const [password, setPassword] = React.useState("");
 
+  const [error, setError] = React.useState<string | null>(null);
+
   const selectedCountry = phoneCountryOptions.find(
     (option) => option.value === countryCode,
   );
 
+  const showPassword = role === "admin" || role === "kitchen";
+
   const handleSubmit = () => {
+    setError(null);
+
+    const validationError = validatePhoneNumber(countryCode, phone);
+
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    if (showPassword && !password.trim()) {
+      setError("Password required for admin or kitchen.");
+      return;
+    }
+
     onSubmit({
       nationality: countryCode,
-      phone_number: phone.replace(/\D/g, ""),
+      phone_number: getCleanPhoneForDB(phone),
       role,
-      password,
+      password: showPassword ? password : null,
     });
 
     setPhone("");
@@ -88,21 +109,21 @@ export function AddSection({ open, onOpenChange, onSubmit }: AddSectionProps) {
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="w-full border-l border-white/10 bg-zinc-950 text-white sm:max-w-md"
+        className="w-full border-l border-white/10 bg-[#09090b] text-white sm:max-w-md"
       >
-        <SheetHeader className="space-y-3 border-b border-white/10 pb-5">
-          <div className="flex items-center gap-3">
-            <div className="rounded-xl border border-white/10 bg-white/5 p-2">
-              <IconUserPlus className="size-5 text-white" />
+        <SheetHeader className="border-b border-white/10 pb-5">
+          <div className="flex items-center gap-4">
+            <div className="flex size-12 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04]">
+              <IconUserPlus className="size-6 text-white" />
             </div>
 
             <div>
-              <SheetTitle className="text-2xl font-semibold text-white">
+              <SheetTitle className="text-left text-2xl font-semibold text-white">
                 Add User
               </SheetTitle>
 
-              <SheetDescription className="text-white/50">
-                Create user access and assign roles.
+              <SheetDescription className="mt-1 text-left text-white/45">
+                Create a new user account and assign permissions.
               </SheetDescription>
             </div>
           </div>
@@ -117,25 +138,27 @@ export function AddSection({ open, onOpenChange, onSubmit }: AddSectionProps) {
 
                 <Select
                   value={countryCode}
-                  onValueChange={(value: PhoneCountryCode) =>
-                    setCountryCode(value)
-                  }
+                  onValueChange={(value: PhoneCountryCode) => {
+                    setCountryCode(value);
+                    setPhone("");
+                    setError(null);
+                  }}
                 >
-                  <SelectTrigger className="border-white/10 bg-white/5 text-white">
+                  <SelectTrigger className="h-11 border-white/10 bg-white/[0.03] text-white">
                     <SelectValue />
                   </SelectTrigger>
 
                   <SelectContent className="border-white/10 bg-zinc-950 text-white">
                     {phoneCountryOptions.map((option) => (
                       <SelectItem key={option.value} value={option.value}>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-3">
                           {option.flagSrc ? (
                             <Image
                               src={option.flagSrc}
                               alt={option.label}
                               width={20}
                               height={14}
-                              className="h-4 w-auto object-cover"
+                              className="h-4 w-auto rounded-sm object-cover"
                             />
                           ) : (
                             <span>{option.flag}</span>
@@ -154,93 +177,117 @@ export function AddSection({ open, onOpenChange, onSubmit }: AddSectionProps) {
                 <Label className="text-white/80">Phone Number</Label>
 
                 <div className="relative">
-                  <IconPhone className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-white/40" />
+                  <IconPhone className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-white/35" />
 
                   <Input
                     placeholder={`Enter ${selectedCountry?.phoneLength} digits`}
-                    className="border-white/10 bg-white/5 pl-9 text-white placeholder:text-white/35"
+                    className="h-11 border-white/10 bg-white/[0.03] pl-10 text-white placeholder:text-white/30"
                     value={phone}
-                    onChange={(e) =>
-                      setPhone(limitPhoneNumber(e.target.value, countryCode))
-                    }
+                    onChange={(e) => {
+                      setPhone(limitPhoneNumber(e.target.value, countryCode));
+
+                      setError(null);
+                    }}
                   />
                 </div>
+
+                <p className="text-xs text-white/35">
+                  {selectedCountry?.label} numbers require{" "}
+                  {selectedCountry?.phoneLength} digits.
+                </p>
               </div>
 
               {/* ROLE */}
               <div className="space-y-2">
-                <Label className="text-white/80">User Role</Label>
+                <Label className="text-white/80">Role</Label>
 
-                <Select value={role} onValueChange={setRole}>
-                  <SelectTrigger className="border-white/10 bg-white/5 text-white">
+                <Select
+                  value={role}
+                  onValueChange={(value) => {
+                    setRole(value);
+
+                    if (value === "user") {
+                      setPassword("");
+                    }
+                  }}
+                >
+                  <SelectTrigger className="h-11 border-white/10 bg-white/[0.03] text-white">
                     <SelectValue />
                   </SelectTrigger>
 
                   <SelectContent className="border-white/10 bg-zinc-950 text-white">
                     <SelectItem value="user">
-                      <div className="flex items-center gap-2">
-                        <Badge
-                          variant="secondary"
-                          className="border-0 bg-white/10 text-white"
-                        >
-                          User
-                        </Badge>
-                      </div>
+                      <Badge
+                        variant="outline"
+                        className="border-white/20 text-white"
+                      >
+                        User
+                      </Badge>
                     </SelectItem>
 
                     <SelectItem value="admin">
-                      <div className="flex items-center gap-2">
-                        <Badge className="bg-white text-black">Admin</Badge>
-                      </div>
+                      <Badge className="bg-white text-black">Admin</Badge>
                     </SelectItem>
 
                     <SelectItem value="kitchen">
-                      <div className="flex items-center gap-2">
-                        <Badge
-                          variant="outline"
-                          className="border-white/20 text-white"
-                        >
-                          Kitchen
-                        </Badge>
-                      </div>
+                      <Badge
+                        variant="outline"
+                        className="border-white/20 text-white"
+                      >
+                        Kitchen
+                      </Badge>
                     </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               {/* PASSWORD */}
-              <div className="space-y-2">
-                <Label className="text-white/80">Password</Label>
+              {showPassword && (
+                <div className="space-y-2">
+                  <Label className="text-white/80">Password</Label>
 
-                <div className="relative">
-                  <IconLock className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-white/40" />
+                  <div className="relative">
+                    <IconLock className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-white/35" />
 
-                  <Input
-                    type="password"
-                    placeholder="Enter password"
-                    className="border-white/10 bg-white/5 pl-9 text-white placeholder:text-white/35"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
+                    <Input
+                      type="password"
+                      placeholder="Enter password"
+                      className="h-11 border-white/10 bg-white/[0.03] pl-10 text-white placeholder:text-white/30"
+                      value={password}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        setError(null);
+                      }}
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* ERROR */}
+              {error && (
+                <div className="flex items-start gap-2 rounded-xl border border-red-500/20 bg-red-500/10 p-3">
+                  <IconAlertCircle className="mt-0.5 size-4 text-red-400" />
+
+                  <p className="text-sm text-red-300">{error}</p>
+                </div>
+              )}
             </div>
           </Card>
 
-          <Card className="border border-dashed border-white/10 bg-white/[0.03] p-4 shadow-none">
+          <Card className="border border-white/10 bg-white/[0.02] p-4 shadow-none">
             <div className="flex items-start gap-3">
-              <div className="rounded-lg border border-white/10 bg-white/5 p-2">
+              <div className="flex size-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04]">
                 <IconShield className="size-4 text-white" />
               </div>
 
-              <div className="space-y-1">
+              <div>
                 <h4 className="text-sm font-medium text-white">
                   Access Control
                 </h4>
 
-                <p className="text-xs leading-relaxed text-white/45">
-                  Roles determine dashboard permissions and system access for
-                  each user.
+                <p className="mt-1 text-xs leading-relaxed text-white/40">
+                  Admin and Kitchen accounts require passwords for secure
+                  access.
                 </p>
               </div>
             </div>

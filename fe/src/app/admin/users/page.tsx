@@ -7,6 +7,7 @@ import {
   IconChevronDown,
   IconPlus,
   IconLayoutColumns,
+  IconAlertTriangle,
 } from "@tabler/icons-react";
 
 import { toast } from "sonner";
@@ -45,10 +46,20 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 /* ================= SUPABASE ================= */
 const supabase = createClient();
@@ -73,6 +84,11 @@ export default function Page() {
   const [updateOpen, setUpdateOpen] = React.useState(false);
 
   const [selectedUser, setSelectedUser] = React.useState<User | null>(null);
+
+  /* ================= DELETE CONFIRM ================= */
+  const [deleteOpen, setDeleteOpen] = React.useState(false);
+
+  const [deleteUser, setDeleteUser] = React.useState<User | null>(null);
 
   /* ================= COLUMN VISIBILITY ================= */
   const [visibleColumns, setVisibleColumns] = React.useState({
@@ -206,8 +222,13 @@ export default function Page() {
   };
 
   /* ================= DELETE ================= */
-  const deleteRow = async (id: string) => {
-    const { error } = await supabase.from("users").delete().eq("id", id);
+  const deleteRow = async () => {
+    if (!deleteUser) return;
+
+    const { error } = await supabase
+      .from("users")
+      .delete()
+      .eq("id", deleteUser.id);
 
     if (error) {
       console.error("DELETE ERROR:", error);
@@ -217,15 +238,20 @@ export default function Page() {
       return;
     }
 
-    toast.success("Deleted");
+    toast.success("User deleted");
 
-    setData((prev) => prev.filter((u) => u.id !== id));
+    setData((prev) => prev.filter((u) => u.id !== deleteUser.id));
+
+    setDeleteOpen(false);
+    setDeleteUser(null);
   };
 
   return (
     <>
+      {/* ================= ADD ================= */}
       <AddSection open={addOpen} onOpenChange={setAddOpen} onSubmit={addUser} />
 
+      {/* ================= UPDATE ================= */}
       <Update
         open={updateOpen}
         onOpenChange={setUpdateOpen}
@@ -233,6 +259,46 @@ export default function Page() {
         onSubmit={updateUser}
       />
 
+      {/* ================= DELETE CONFIRM ================= */}
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent className="border-white/10 bg-zinc-950 text-white">
+          <AlertDialogHeader>
+            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full border border-red-500/20 bg-red-500/10">
+              <IconAlertTriangle className="size-6 text-red-500" />
+            </div>
+
+            <AlertDialogTitle className="text-xl text-white">
+              Delete User
+            </AlertDialogTitle>
+
+            <AlertDialogDescription className="text-sm text-white/60">
+              Are you sure you want to delete this user?
+              <br />
+              <br />
+              <span className="font-medium text-white">
+                {deleteUser?.phone_number}
+              </span>
+              <br />
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <AlertDialogFooter className="mt-4">
+            <AlertDialogCancel className="border-white/10 bg-white/5 text-white hover:bg-white/10 hover:text-white">
+              Cancel
+            </AlertDialogCancel>
+
+            <AlertDialogAction
+              onClick={deleteRow}
+              className="bg-red-600 text-white hover:bg-red-700"
+            >
+              Delete User
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* ================= LAYOUT ================= */}
       <SidebarProvider
         style={
           {
@@ -253,7 +319,7 @@ export default function Page() {
                   {/* ================= TOP BAR ================= */}
                   <div className="px-0">
                     <div className="flex w-full items-center justify-between">
-                      {/* LEFT SIDE */}
+                      {/* LEFT */}
                       <div className="flex items-center gap-3">
                         <Label htmlFor="view-selector" className="sr-only">
                           View
@@ -278,7 +344,7 @@ export default function Page() {
                         </TabsList>
                       </div>
 
-                      {/* RIGHT SIDE */}
+                      {/* RIGHT */}
                       <div className="ml-auto flex items-center gap-2">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -440,6 +506,7 @@ export default function Page() {
                                   key={row.id}
                                   className="hover:bg-muted/30"
                                 >
+                                  {/* USER */}
                                   {visibleColumns.phone && (
                                     <TableCell className="px-6 py-4">
                                       <div className="flex items-center gap-3">
@@ -474,6 +541,7 @@ export default function Page() {
                                     </TableCell>
                                   )}
 
+                                  {/* ROLE */}
                                   {visibleColumns.role && (
                                     <TableCell className="px-6 py-4">
                                       <Select
@@ -486,10 +554,13 @@ export default function Page() {
                                           <SelectValue />
                                         </SelectTrigger>
 
+                                        {/* THIS MAKES IT DROPDOWN BELOW */}
                                         <SelectContent
                                           position="popper"
                                           side="bottom"
-                                          align="center"
+                                          align="start"
+                                          sideOffset={6}
+                                          className="min-w-[140px]"
                                         >
                                           <SelectItem value="user">
                                             User
@@ -507,12 +578,14 @@ export default function Page() {
                                     </TableCell>
                                   )}
 
+                                  {/* PASSWORD */}
                                   {visibleColumns.password && (
-                                    <TableCell className="px-6 py-4 text-muted-foreground text-center">
+                                    <TableCell className="px-6 py-4 text-center text-muted-foreground">
                                       {row.password ? "•••••••••" : "-"}
                                     </TableCell>
                                   )}
 
+                                  {/* CREATED */}
                                   {visibleColumns.created && (
                                     <TableCell className="px-6 py-4 text-center text-sm text-muted-foreground">
                                       {new Date(
@@ -521,6 +594,7 @@ export default function Page() {
                                     </TableCell>
                                   )}
 
+                                  {/* ACTIONS */}
                                   {visibleColumns.actions && (
                                     <TableCell className="px-6 py-4">
                                       <div className="flex justify-center gap-2">
@@ -529,7 +603,6 @@ export default function Page() {
                                           size="sm"
                                           onClick={() => {
                                             setSelectedUser(row);
-
                                             setUpdateOpen(true);
                                           }}
                                         >
@@ -539,7 +612,10 @@ export default function Page() {
                                         <Button
                                           variant="destructive"
                                           size="sm"
-                                          onClick={() => deleteRow(row.id)}
+                                          onClick={() => {
+                                            setDeleteUser(row);
+                                            setDeleteOpen(true);
+                                          }}
                                         >
                                           Delete
                                         </Button>

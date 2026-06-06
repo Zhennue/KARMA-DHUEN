@@ -197,8 +197,8 @@ export function ItemDetail({ item, onBack }: ItemDetailProps) {
 
             {/* SUCCESS MESSAGE */}{" "}
             {showSuccess && (
-              <div className="pointer-events-none absolute bottom-20 left-1/2 z-50 -translate-x-1/2 animate-in fade-in zoom-in-95 duration-300">
-                <div className="flex items-center gap-2 whitespace-nowrap rounded-xl border border-green-500/20 bg-green-500/90 px-6 py-3 text-sm font-semibold text-white shadow-2xl backdrop-blur-md sm:text-base">
+              <div className="pointer-events-none absolute bottom-20 left-1/3 z-50 -translate-x-1/2 animate-in fade-in zoom-in-95 duration-300">
+                <div className="flex items-center gap-2 whitespace-nowrap rounded-xl border border-green-500/20 bg-green-500/90 px-20 py-5 text-sm font-semibold text-white shadow-2xl backdrop-blur-md sm:text-base">
                   <Check className="h-5 w-5" />
                   <span>Added to cart successfully</span>
                 </div>

@@ -61,12 +61,15 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+import { Badge } from "@/components/ui/badge";
+
 /* ================= SUPABASE ================= */
 const supabase = createClient();
 
 /* ================= TYPE ================= */
 type User = {
   id: string;
+  name: string | null;
   nationality: "bt" | "in";
   phone_number: string;
   password: string | null;
@@ -92,6 +95,7 @@ export default function Page() {
 
   /* ================= COLUMN VISIBILITY ================= */
   const [visibleColumns, setVisibleColumns] = React.useState({
+    name: true,
     phone: true,
     role: true,
     password: true,
@@ -125,6 +129,7 @@ export default function Page() {
 
   /* ================= ADD USER ================= */
   const addUser = async (values: {
+    name: string | null;
     nationality: "bt" | "in";
     phone_number: string;
     role: string;
@@ -134,6 +139,7 @@ export default function Page() {
       .from("users")
       .insert([
         {
+          name: values.name,
           nationality: values.nationality,
           phone_number: values.phone_number,
           role: values.role,
@@ -180,6 +186,7 @@ export default function Page() {
   const updateUser = async (
     id: string,
     values: {
+      name: string | null;
       nationality: "bt" | "in";
       phone_number: string;
       role: string;
@@ -189,6 +196,7 @@ export default function Page() {
     const { error } = await supabase
       .from("users")
       .update({
+        name: values.name,
         nationality: values.nationality,
         phone_number: values.phone_number,
         role: values.role,
@@ -211,6 +219,7 @@ export default function Page() {
         u.id === id
           ? {
               ...u,
+              name: values.name,
               nationality: values.nationality,
               phone_number: values.phone_number,
               role: values.role,
@@ -246,6 +255,46 @@ export default function Page() {
     setDeleteUser(null);
   };
 
+  /* ================= ROLE COUNTS ================= */
+  const adminCount = data.filter((u) => u.role === "admin").length;
+
+  const kitchenCount = data.filter((u) => u.role === "kitchen").length;
+
+  const userCount = data.filter((u) => u.role === "user").length;
+
+  /* ================= FILTER ================= */
+  const [roleFilter, setRoleFilter] = React.useState("outline");
+
+  /* ================= FILTERED DATA ================= */
+  const filteredData = data
+    .filter((row) => {
+      /* OUTLINE ORDER:
+     ADMIN -> KITCHEN -> USER
+  */
+      if (roleFilter === "outline") {
+        const order = {
+          admin: 0,
+          kitchen: 1,
+          user: 2,
+        };
+
+        return true;
+      }
+
+      return row.role === roleFilter;
+    })
+    .sort((a, b) => {
+      if (roleFilter !== "outline") return 0;
+
+      const order: Record<string, number> = {
+        admin: 0,
+        kitchen: 1,
+        user: 2,
+      };
+
+      return order[a.role] - order[b.role];
+    });
+
   return (
     <>
       {/* ================= ADD ================= */}
@@ -264,11 +313,11 @@ export default function Page() {
         <AlertDialogContent className="border-white/10 bg-zinc-950 text-white">
           <AlertDialogHeader>
             <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full border border-red-500/20 bg-red-500/10">
-              <IconAlertTriangle className="size-6 text-red-500" />
+              <IconAlertTriangle className="size-6 text-red-500"/>
             </div>
 
-            <AlertDialogTitle className="text-xl text-white">
-              Delete User
+            <AlertDialogTitle className="text-xl">
+              {deleteUser?.name || "Delete User"}
             </AlertDialogTitle>
 
             <AlertDialogDescription className="text-sm text-white/60">
@@ -290,7 +339,8 @@ export default function Page() {
 
             <AlertDialogAction
               onClick={deleteRow}
-              className="bg-red-600 text-white hover:bg-red-700"
+              className="hover:bg-red-700"
+              variant="destructive"
             >
               Delete User
             </AlertDialogAction>
@@ -315,7 +365,11 @@ export default function Page() {
           <div className="flex flex-1 flex-col bg-muted/20">
             <div className="@container/main flex flex-1 flex-col">
               <div className="flex flex-col gap-6 p-4 md:p-6">
-                <Tabs defaultValue="outline" className="w-full flex-col gap-6">
+                <Tabs
+                  value={roleFilter}
+                  onValueChange={(val) => setRoleFilter(val)}
+                  className="w-full flex-col gap-6"
+                >
                   {/* ================= TOP BAR ================= */}
                   <div className="px-0">
                     <div className="flex w-full items-center justify-between">
@@ -325,7 +379,11 @@ export default function Page() {
                           View
                         </Label>
 
-                        <Select defaultValue="outline">
+                        {/* MOBILE SELECT */}
+                        <Select
+                          value={roleFilter}
+                          onValueChange={(val) => setRoleFilter(val)}
+                        >
                           <SelectTrigger
                             className="flex w-fit @4xl/main:hidden"
                             size="sm"
@@ -336,16 +394,39 @@ export default function Page() {
 
                           <SelectContent>
                             <SelectItem value="outline">Outline</SelectItem>
+
+                            <SelectItem value="admin">Admin</SelectItem>
+
+                            <SelectItem value="kitchen">Kitchen</SelectItem>
+
+                            <SelectItem value="user">User</SelectItem>
                           </SelectContent>
                         </Select>
 
-                        <TabsList className="hidden @4xl/main:flex">
-                          <TabsTrigger value="outline">Users</TabsTrigger>
+                        {/* DESKTOP TABS */}
+                        <TabsList className="hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:bg-muted-foreground/30 **:data-[slot=badge]:px-1 @4xl/main:flex">
+                          <TabsTrigger value="outline">Outline</TabsTrigger>
+
+                          <TabsTrigger value="admin" className="gap-2">
+                            Admin
+                            <Badge variant="secondary">{adminCount}</Badge>
+                          </TabsTrigger>
+
+                          <TabsTrigger value="kitchen" className="gap-2">
+                            Kitchen
+                            <Badge variant="secondary">{kitchenCount}</Badge>
+                          </TabsTrigger>
+
+                          <TabsTrigger value="user" className="gap-2">
+                            User
+                            <Badge variant="secondary">{userCount}</Badge>
+                          </TabsTrigger>
                         </TabsList>
                       </div>
 
                       {/* RIGHT */}
                       <div className="ml-auto flex items-center gap-2">
+                        {/* COLUMN CUSTOMIZE */}
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button
@@ -366,6 +447,18 @@ export default function Page() {
                           </DropdownMenuTrigger>
 
                           <DropdownMenuContent align="end" className="w-56">
+                            <DropdownMenuCheckboxItem
+                              checked={visibleColumns.name}
+                              onCheckedChange={(value) =>
+                                setVisibleColumns((prev) => ({
+                                  ...prev,
+                                  name: !!value,
+                                }))
+                              }
+                            >
+                              Name
+                            </DropdownMenuCheckboxItem>
+
                             <DropdownMenuCheckboxItem
                               checked={visibleColumns.phone}
                               onCheckedChange={(value) =>
@@ -428,6 +521,7 @@ export default function Page() {
                           </DropdownMenuContent>
                         </DropdownMenu>
 
+                        {/* ADD USER */}
                         <Button
                           variant="outline"
                           size="sm"
@@ -443,20 +537,26 @@ export default function Page() {
                   </div>
 
                   {/* ================= TABLE ================= */}
-                  <TabsContent value="outline" className="m-0">
+                  <TabsContent value={roleFilter} className="m-0">
                     <div className="overflow-hidden rounded-xl border bg-background shadow-sm">
                       <div className="overflow-x-auto">
                         <Table>
                           <TableHeader className="bg-muted/40">
                             <TableRow className="hover:bg-transparent">
                               {visibleColumns.phone && (
-                                <TableHead className="h-12 px-6">
+                                <TableHead className="h-12 px-20">
                                   User
                                 </TableHead>
                               )}
 
+                              {visibleColumns.name && (
+                                <TableHead className="h-12 px-6 text-center">
+                                  Phone
+                                </TableHead>
+                              )}
+
                               {visibleColumns.role && (
-                                <TableHead className="h-12 px-6">
+                                <TableHead className="h-12 px-20 text-center">
                                   Role
                                 </TableHead>
                               )}
@@ -485,29 +585,29 @@ export default function Page() {
                             {loading ? (
                               <TableRow>
                                 <TableCell
-                                  colSpan={5}
+                                  colSpan={6}
                                   className="h-24 text-center text-muted-foreground"
                                 >
                                   Loading...
                                 </TableCell>
                               </TableRow>
-                            ) : data.length === 0 ? (
+                            ) : filteredData.length === 0 ? (
                               <TableRow>
                                 <TableCell
-                                  colSpan={5}
+                                  colSpan={6}
                                   className="h-24 text-center text-muted-foreground"
                                 >
                                   No users found.
                                 </TableCell>
                               </TableRow>
                             ) : (
-                              data.map((row) => (
+                              filteredData.map((row) => (
                                 <TableRow
                                   key={row.id}
                                   className="hover:bg-muted/30"
                                 >
                                   {/* USER */}
-                                  {visibleColumns.phone && (
+                                  {visibleColumns.name && (
                                     <TableCell className="px-6 py-4">
                                       <div className="flex items-center gap-3">
                                         <div className="flex size-10 items-center justify-center overflow-hidden rounded border border-white/10 bg-muted">
@@ -528,7 +628,7 @@ export default function Page() {
 
                                         <div className="flex flex-col">
                                           <span className="font-medium">
-                                            {row.phone_number}
+                                            {row.name?.trim() ? row.name : "-"}
                                           </span>
 
                                           <span className="text-xs text-muted-foreground">
@@ -541,40 +641,43 @@ export default function Page() {
                                     </TableCell>
                                   )}
 
+                                  {/* PHONE_NUMBER */}
+                                  {visibleColumns.phone && (
+                                    <TableCell className="px-6 py-4 text-center text-muted-foreground">
+                                      {row.phone_number}
+                                      <div className="font-medium"></div>
+                                    </TableCell>
+                                  )}
+
                                   {/* ROLE */}
                                   {visibleColumns.role && (
                                     <TableCell className="px-6 py-4">
-                                      <Select
-                                        value={row.role}
-                                        onValueChange={(val) =>
-                                          updateRole(row.id, val)
-                                        }
-                                      >
-                                        <SelectTrigger className="h-9 w-36">
-                                          <SelectValue />
-                                        </SelectTrigger>
-
-                                        {/* THIS MAKES IT DROPDOWN BELOW */}
-                                        <SelectContent
-                                          position="popper"
-                                          side="bottom"
-                                          align="start"
-                                          sideOffset={6}
-                                          className="min-w-[140px]"
+                                      <div className="flex w-full items-center justify-center">
+                                        <Select
+                                          value={row.role}
+                                          onValueChange={(val) =>
+                                            updateRole(row.id, val)
+                                          }
                                         >
-                                          <SelectItem value="user">
-                                            User
-                                          </SelectItem>
+                                          <SelectTrigger className="h-9 w-36 text-center">
+                                            <SelectValue />
+                                          </SelectTrigger>
 
-                                          <SelectItem value="admin">
-                                            Admin
-                                          </SelectItem>
+                                          <SelectContent>
+                                            <SelectItem value="user">
+                                              User
+                                            </SelectItem>
 
-                                          <SelectItem value="kitchen">
-                                            Kitchen
-                                          </SelectItem>
-                                        </SelectContent>
-                                      </Select>
+                                            <SelectItem value="admin">
+                                              Admin
+                                            </SelectItem>
+
+                                            <SelectItem value="kitchen">
+                                              Kitchen
+                                            </SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
                                     </TableCell>
                                   )}
 

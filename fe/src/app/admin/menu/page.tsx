@@ -20,6 +20,19 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+import { IconAlertTriangle } from "@tabler/icons-react";
+
 import { toast } from "sonner";
 
 const supabase = createClient();
@@ -232,6 +245,34 @@ export default function Page() {
 
     return value;
   };
+
+  const [deleteCategoryOpen, setDeleteCategoryOpen] = React.useState(false);
+  const [deleteCategory, setDeleteCategory] = React.useState<Category | null>(
+    null,
+  );
+
+  const deleteCategoryRow = async () => {
+    if (!deleteCategory) return;
+
+    const { error } = await supabase
+      .from("menu_categories")
+      .delete()
+      .eq("id", deleteCategory.id);
+
+    if (error) {
+      console.error("DELETE CATEGORY ERROR:", error);
+      toast.error(error.message || "Delete failed");
+      return;
+    }
+
+    setCategories((prev) => prev.filter((c) => c.id !== deleteCategory.id));
+
+    toast.success("Category deleted");
+
+    setDeleteCategoryOpen(false);
+    setDeleteCategory(null);
+  };
+
   /* ================= UI ================= */
   return (
     <SidebarProvider
@@ -262,6 +303,25 @@ export default function Page() {
             </div>
           )}
 
+          {/* PAGE ACTIONS */}
+          <div className="flex justify-between items-center">
+            <h1 className="text-2xl font-bold">Menu Management</h1>
+
+            <Button
+              onClick={() => {
+                setEditCategory({
+                  id: 0,
+                  name: "",
+                  image_url: "",
+                });
+                setFile(null);
+                setIsNewCategory(true);
+              }}
+            >
+              + Add Category
+            </Button>
+          </div>
+
           {/* CATEGORY STRIP WITH IMAGE */}
           <div className="flex gap-4 overflow-x-auto">
             {categories.map((cat) => (
@@ -284,19 +344,33 @@ export default function Page() {
                   </div>
                 )}
 
-                <div className="p-3 text-center font-medium">{cat.name}</div>
-
-                <Button
-                  size="sm"
-                  className="w-full"
-                  variant="outline"
-                  onClick={() => {
-                    setEditCategory(cat);
-                    setIsNewCategory(false);
-                  }}
-                >
-                  Edit
-                </Button>
+                <div className="mt-3 flex gap-2 px-2 pb-3">
+                  {" "}
+                  <Button
+                    size="sm"
+                    className="flex-1 gap-2 bg-white/5 text-white border border-white/10
+             hover:bg-blue-500/10 hover:border-blue-400/30 hover:text-blue-300
+             transition-all duration-200"
+                    onClick={() => {
+                      setEditCategory(cat);
+                      setIsNewCategory(false);
+                    }}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="flex-1 gap-2 bg-white/5 text-white border border-white/10
+             hover:bg-red-500/10 hover:border-red-400/30 hover:text-red-300
+             transition-all duration-200"
+                    onClick={() => {
+                      setDeleteCategory(cat);
+                      setDeleteCategoryOpen(true);
+                    }}
+                  >
+                    Delete
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
@@ -346,10 +420,11 @@ export default function Page() {
                         id: 0,
                         name: "",
                         description: "",
-                        price: 0,
+                        price: "",
                         category_id: cat.id,
                         image_url: "",
                       });
+                      setFile(null); // IMPORTANT
                       setIsNewItem(true);
                     }}
                   >
@@ -375,7 +450,12 @@ export default function Page() {
               <Input
                 value={editCategory.name}
                 onChange={(e) =>
-                  setEditCategory({ ...editCategory, name: e.target.value })
+                  setEditCategory({
+                    ...editCategory,
+                    name:
+                      e.target.value.charAt(0).toUpperCase() +
+                      e.target.value.slice(1),
+                  })
                 }
               />
 
@@ -389,6 +469,50 @@ export default function Page() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* DELETE */}
+
+      <AlertDialog
+        open={deleteCategoryOpen}
+        onOpenChange={setDeleteCategoryOpen}
+      >
+        <AlertDialogContent className="border-white/10 bg-zinc-950 text-white">
+          <AlertDialogHeader>
+            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full border border-red-500/20 bg-red-500/10">
+              <IconAlertTriangle className="size-6 text-red-500" />
+            </div>
+
+            <AlertDialogTitle className="text-xl">
+              {deleteCategory?.name || "Delete Category"}
+            </AlertDialogTitle>
+
+            <AlertDialogDescription className="text-sm text-white/60">
+              Are you sure you want to delete this category?
+              <br />
+              <br />
+              <span className="font-medium text-white">
+                This will permanently remove it.
+              </span>
+              <br />
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <AlertDialogFooter className="mt-4">
+            <AlertDialogCancel className="border-white/10 bg-white/5 text-white hover:bg-white/10 hover:text-white">
+              Cancel
+            </AlertDialogCancel>
+
+            <AlertDialogAction
+              onClick={deleteCategoryRow}
+              className="hover:bg-red-700"
+              variant="destructive"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* ITEM MODAL */}
       <Dialog open={!!editItem} onOpenChange={() => setEditItem(null)}>
@@ -416,16 +540,24 @@ export default function Page() {
                 }
               />
 
-              <Input
-                placeholder="Price"
-                value={editItem.price}
-                onChange={(e) =>
-                  setEditItem({
-                    ...editItem,
-                    price: e.target.value === "" ? "" : Number(e.target.value),
-                  })
-                }
-              />
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                  Nu.
+                </span>
+
+                <Input
+                  placeholder="0.00"
+                  className="pl-12"
+                  value={editItem.price}
+                  onChange={(e) =>
+                    setEditItem({
+                      ...editItem,
+                      price:
+                        e.target.value === "" ? "" : Number(e.target.value),
+                    })
+                  }
+                />
+              </div>
 
               <Input
                 type="file"

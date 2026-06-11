@@ -159,7 +159,9 @@ export default function Page() {
           .single();
 
     if (res.error) {
-      console.error(res.error);
+      console.log("CATEGORY UPDATE ERROR");
+      console.log(JSON.stringify(res.error, null, 2));
+      console.log(res);
       toast.error(res.error.message);
       return;
     }
@@ -332,44 +334,43 @@ export default function Page() {
                 {cat.image_url ? (
                   <img
                     src={getImageUrl(cat.image_url)}
-                    className="w-45 h-40 rounded object-cover"
+                    className="w-full h-40 object-cover"
                     alt={cat.name}
-                    onError={(e) => {
-                      console.log("BROKEN SMALL IMAGE:", cat.image_url);
-                    }}
                   />
                 ) : (
-                  <div className="w-full h-24 bg-gray-200 flex items-center justify-center text-xs text-gray-500">
+                  <div className="w-full h-40 bg-gray-200 flex items-center justify-center text-xs text-gray-500">
                     No Image
                   </div>
                 )}
+
+                <div className="p-2 text-center">
+                  <h3 className="font-semibold text-sm">{cat.name}</h3>
+                </div>
 
                 <div className="mt-3 flex gap-2 px-2 pb-3">
                   {" "}
                   <Button
                     size="sm"
-                    className="flex-1 gap-2 bg-white/5 text-white border border-white/10
-             hover:bg-blue-500/10 hover:border-blue-400/30 hover:text-blue-300
-             transition-all duration-200"
+                    className="flex-1 gap-2 bg-white/5 text-white border border-white/10 hover:bg-blue-500/10 hover:border-blue-400/30 hover:text-blue-300 transition-all duration-200"
                     onClick={() => {
                       setEditCategory(cat);
                       setIsNewCategory(false);
                     }}
                   >
-                    Edit
-                  </Button>
+                    {" "}
+                    Edit{" "}
+                  </Button>{" "}
                   <Button
                     size="sm"
-                    className="flex-1 gap-2 bg-white/5 text-white border border-white/10
-             hover:bg-red-500/10 hover:border-red-400/30 hover:text-red-300
-             transition-all duration-200"
+                    className="flex-1 gap-2 bg-white/5 text-white border border-white/10 hover:bg-red-500/10 hover:border-red-400/30 hover:text-red-300 transition-all duration-200"
                     onClick={() => {
                       setDeleteCategory(cat);
                       setDeleteCategoryOpen(true);
                     }}
                   >
-                    Delete
-                  </Button>
+                    {" "}
+                    Delete{" "}
+                  </Button>{" "}
                 </div>
               </div>
             ))}
@@ -447,14 +448,21 @@ export default function Page() {
 
           {editCategory && (
             <div className="space-y-3">
+
+               {editCategory.image_url && (
+                <img
+                  src={editCategory.image_url}
+                  alt={editCategory.name}
+                  className="w-45 rounded-md align-center"
+                />
+              )}
+              
               <Input
                 value={editCategory.name}
                 onChange={(e) =>
                   setEditCategory({
                     ...editCategory,
-                    name:
-                      e.target.value.charAt(0).toUpperCase() +
-                      e.target.value.slice(1),
+                    name: e.target.value,
                   })
                 }
               />

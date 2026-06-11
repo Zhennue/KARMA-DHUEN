@@ -275,6 +275,8 @@ export default function Page() {
     setDeleteCategory(null);
   };
 
+  
+
   /* ================= UI ================= */
   return (
     <SidebarProvider
@@ -395,22 +397,67 @@ export default function Page() {
                   {cat.name}
                 </h2>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
                   {getItemsByCategory(cat.id).map((item) => (
-                    <div key={item.id} className="border rounded-xl p-4">
-                      <h3 className="font-semibold">{item.name}</h3>
-                      <p>Nu. {item.price}</p>
+                    <div
+                      key={item.id}
+                      className="border rounded-lg overflow-hidden w-full max-w-[220px]"
+                    >
+                      {/* IMAGE (smaller height) */}
+                      {item.image_url ? (
+                        <img
+                          src={item.image_url}
+                          className="object-cover"
+                          alt={item.name}
+                        />
+                      ) : (
+                        <div className="w-full h-40 bg-gray-200 flex items-center justify-center text-[10px] text-gray-500">
+                          No Image
+                        </div>
+                      )}
 
-                      <Button
-                        size="sm"
-                        className="mt-2 w-full"
-                        onClick={() => {
-                          setEditItem(item);
-                          setIsNewItem(false);
-                        }}
-                      >
-                        Edit
-                      </Button>
+                      {/* CONTENT */}
+                      <div className="p-2 space-y-1">
+                        <h3 className="font-medium text-sm truncate">
+                          {item.name}
+                        </h3>
+
+                        {item.description && (
+                          <p className="text-[11px] text-muted-foreground line-clamp-2">
+                            {item.description}
+                          </p>
+                        )}
+
+                        <p className="text-sm font-semibold">
+                          Nu. {item.price}
+                        </p>
+
+                        <div className="mt-3 flex gap-2 px-2 pb-3">
+                          {" "}
+                          <Button
+                            size="sm"
+                            className="flex-1 gap-2 bg-white/5 text-white border border-white/10 hover:bg-blue-500/10 hover:border-blue-400/30 hover:text-blue-300 transition-all duration-200"
+                            onClick={() => {
+                              setEditCategory(cat);
+                              setIsNewCategory(false);
+                            }}
+                          >
+                            {" "}
+                            Edit{" "}
+                          </Button>{" "}
+                          <Button
+                            size="sm"
+                            className="flex-1 gap-2 bg-white/5 text-white border border-white/10 hover:bg-red-500/10 hover:border-red-400/30 hover:text-red-300 transition-all duration-200"
+                            onClick={() => {
+                              setDeleteCategory(cat);
+                              setDeleteCategoryOpen(true);
+                            }}
+                          >
+                            {" "}
+                            Delete{" "}
+                          </Button>{" "}
+                        </div>
+                      </div>
                     </div>
                   ))}
 
@@ -448,15 +495,14 @@ export default function Page() {
 
           {editCategory && (
             <div className="space-y-3">
-
-               {editCategory.image_url && (
+              {editCategory.image_url && (
                 <img
                   src={editCategory.image_url}
                   alt={editCategory.name}
                   className="w-45 rounded-md align-center"
                 />
               )}
-              
+
               <Input
                 value={editCategory.name}
                 onChange={(e) =>

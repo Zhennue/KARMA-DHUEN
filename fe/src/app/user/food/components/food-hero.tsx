@@ -5,17 +5,17 @@ const sections = [
   {
     label: "Cuisine",
     href: "#cuisine",
-    image: "/BC.png",
+    image: "/o.png",
   },
   {
     label: "Fast Foods",
     href: "#fast-foods",
-    image: "/bg.png",
+    image: "/k.png",
   },
   {
     label: "Noodles",
     href: "#noodles",
-    image: "/bg.png",
+    image: "/just.png",
   },
   {
     label: "Hot Drinks",
@@ -45,22 +45,22 @@ export function FoodHero() {
           >
             <Card className="h-15 w-24 overflow-hidden rounded-sm border-[#c9723f]/35 bg-[#1a120d] p-0 shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:border-[#c9723f]/55 hover:bg-[#21140e]">
               <a href={section.href} className="block h-full w-full">
-                <div className="relative h-full w-full overflow-hidden">
+                <div className="relative h-full w-full flex items-center justify-center p-1">
                   <Image
                     src={section.image}
                     alt={section.label}
                     fill
                     sizes="180px"
-                    className="object-cover"
+                    className="object-contain"
                   />
                 </div>
               </a>
             </Card>
 
             {/* Better title style */}
-              <div className="mt-0 rounded px-5 py-[3px] text-[11px] font-medium text-[#f5e6dc] shadow-sm backdrop-blur-sm transition-colors duration-200 group-hover:bg-[#c9723f] group-hover:text-white">
-                {section.label}
-              </div>
+            <div className="mt-0 rounded px-5 py-[3px] text-[11px] font-medium text-[#f5e6dc] shadow-sm backdrop-blur-sm transition-colors duration-200 group-hover:bg-[#c9723f] group-hover:text-white">
+              {section.label}
+            </div>
           </div>
         ))}
       </div>

@@ -38,12 +38,12 @@ const data = {
   navMain: [
     {
       title: "Food",
-      url: "/food",
+      url: "/user/food",
       icon: IconBowlChopsticks,
     },
     {
       title: "Drinks",
-      url: "/drinks",
+      url: "/user/drinks",
       icon: IconCoffee,
     },
     {

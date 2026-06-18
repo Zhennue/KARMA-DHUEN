@@ -13,7 +13,12 @@ interface MenuSectionProps extends FoodMenuSection {
   onSelectItem: (item: FoodMenuSection["items"][number]) => void;
 }
 
-export function MenuSection({ id, title, items, onSelectItem }: MenuSectionProps) {
+export function MenuSection({
+  id,
+  title,
+  items,
+  onSelectItem,
+}: MenuSectionProps) {
   const isCuisineSection = id === "cuisine";
 
   return (
@@ -35,7 +40,7 @@ export function MenuSection({ id, title, items, onSelectItem }: MenuSectionProps
           {items.map((item) => (
             <Card
               key={item.name}
-              onClick={() => onSelectItem(item)} 
+              onClick={() => onSelectItem(item)}
               // Added cursor-pointer for UX clarity
               className="cursor-pointer overflow-hidden p-0 rounded border border-0 bg-[#17100d] text-white transition-all duration-300 hover:-translate-y-1 hover:border-[#c9723f]/55 hover:bg-[#20120e]"
             >
@@ -45,7 +50,7 @@ export function MenuSection({ id, title, items, onSelectItem }: MenuSectionProps
                   src={item.image ?? "/bg.png"}
                   alt={item.name}
                   fill
-                  className="object-cover transition-transform duration-500 hover:scale-105"
+                  className="object-contain"
                   sizes="(max-width: 768px) 100vw, 50vw"
                 />
 

@@ -16,44 +16,41 @@ export default function FlexPage({
   return (
     <>
       <div
-        className={`flex min-h-screen flex-col bg-[#110b09] text-white lg:flex-row ${
+        className={`flex min-h-screen flex-col overflow-y-auto bg-[#110b09] text-white ${
           reverse ? "lg:flex-row-reverse" : ""
-        }`}
+        } lg:flex-row`}
       >
         {/* LEFT SIDE */}
-        <div className="relative w-full lg:h-screen lg:w-1/2">
-          {left}
-        </div>
+        <div className="relative w-full lg:h-screen lg:w-1/2">{left}</div>
 
-        {/* RIGHT SIDE (SCROLLABLE) */}
-        <div className="soft-scroll flex flex-1 flex-col justify-between px-4 py-4 sm:px-5 md:px-6 lg:h-screen lg:overflow-y-auto lg:px-8 xl:px-10">
+        {/* RIGHT SIDE */}
+        <div className="soft-scroll flex flex-1 flex-col justify-between overflow-y-auto px-4 py-4 sm:px-5 md:px-6 lg:h-screen lg:px-8 xl:px-10">
           {right}
         </div>
       </div>
 
-      {/* GLOBAL STYLES */}
       <style jsx global>{`
-        /* Soft scrollbar styling */
         .soft-scroll {
-          scrollbar-width: thin; /* Firefox */
-          scrollbar-color: #3a2a25 transparent;
+          scrollbar-width: thin;
+          scrollbar-color: #c9723f #1a1310;
         }
 
         .soft-scroll::-webkit-scrollbar {
-          width: 6px;
+          width: 10px;
         }
 
         .soft-scroll::-webkit-scrollbar-track {
-          background: transparent;
+          background: #1a1310;
+          border-radius: 999px;
         }
 
         .soft-scroll::-webkit-scrollbar-thumb {
-          background-color: #3a2a25;
+          background: #c9723f;
           border-radius: 999px;
         }
 
         .soft-scroll::-webkit-scrollbar-thumb:hover {
-          background-color: #4a352f;
+          background: #b05f30;
         }
       `}</style>
     </>

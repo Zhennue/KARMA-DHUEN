@@ -275,8 +275,6 @@ export default function Page() {
     setDeleteCategory(null);
   };
 
-  
-
   /* ================= UI ================= */
   return (
     <SidebarProvider
@@ -383,19 +381,19 @@ export default function Page() {
             {categories.map((cat) => (
               <div key={cat.id} className="space-y-4">
                 {/* CATEGORY TITLE WITH SMALL IMAGE */}
-                <h2 className="text-xl font-bold uppercase flex items-center gap-3">
-                  {cat.image_url && (
-                    <img
-                      src={getImageUrl(cat.image_url)}
-                      className="w-30 h-30 rounded object-cover"
-                      alt={cat.name}
-                      onError={(e) => {
-                        console.log("BROKEN SMALL IMAGE:", cat.image_url);
-                      }}
-                    />
-                  )}
-                  {cat.name}
-                </h2>
+                <div className="relative py-4">
+                  <div className="flex items-center gap-4">
+                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/20 to-white/60" />
+
+                    <div className="flex items-center gap-3 px-4">
+                      <h2 className="text-2xl font-bold uppercase tracking-[0.25em] text-white">
+                        {cat.name}
+                      </h2>
+                    </div>
+
+                    <div className="h-px flex-1 bg-gradient-to-l from-transparent via-white/20 to-white/60" />
+                  </div>
+                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
                   {getItemsByCategory(cat.id).map((item) => (
@@ -432,19 +430,19 @@ export default function Page() {
                           Nu. {item.price}
                         </p>
 
-                        <div className="mt-3 flex gap-2 px-2 pb-3">
+                        <div className="mt-3 flex gap-2 px-2 pb-6">
                           {" "}
                           <Button
                             size="sm"
-                            className="flex-1 gap-2 bg-white/5 text-white border border-white/10 hover:bg-blue-500/10 hover:border-blue-400/30 hover:text-blue-300 transition-all duration-200"
+                            className="flex-1"
                             onClick={() => {
-                              setEditCategory(cat);
-                              setIsNewCategory(false);
+                              setEditItem(item);
+                              setFile(null);
+                              setIsNewItem(false);
                             }}
                           >
-                            {" "}
-                            Edit{" "}
-                          </Button>{" "}
+                            Edit
+                          </Button>
                           <Button
                             size="sm"
                             className="flex-1 gap-2 bg-white/5 text-white border border-white/10 hover:bg-red-500/10 hover:border-red-400/30 hover:text-red-300 transition-all duration-200"
@@ -530,95 +528,15 @@ export default function Page() {
         open={deleteCategoryOpen}
         onOpenChange={setDeleteCategoryOpen}
       >
-        <AlertDialogContent className="border-white/10 bg-zinc-950 text-white">
-          <AlertDialogHeader>
-            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full border border-red-500/20 bg-red-500/10">
-              <IconAlertTriangle className="size-6 text-red-500" />
+        <AlertDialogContent className="border-white/10 bg-zinon>
             </div>
-
-            <AlertDialogTitle className="text-xl">
-              {deleteCategory?.name || "Delete Category"}
-            </AlertDialogTitle>
-
-            <AlertDialogDescription className="text-sm text-white/60">
-              Are you sure you want to delete this category?
-              <br />
-              <br />
-              <span className="font-medium text-white">
-                This will permanently remove it.
-              </span>
-              <br />
-              This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-
-          <AlertDialogFooter className="mt-4">
-            <AlertDialogCancel className="border-white/10 bg-white/5 text-white hover:bg-white/10 hover:text-white">
-              Cancel
-            </AlertDialogCancel>
-
-            <AlertDialogAction
-              onClick={deleteCategoryRow}
-              className="hover:bg-red-700"
-              variant="destructive"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* ITEM MODAL */}
-      <Dialog open={!!editItem} onOpenChange={() => setEditItem(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Item</DialogTitle>
-            <DialogDescription>Manage item</DialogDescription>
-          </DialogHeader>
-
-          {editItem && (
-            <div className="space-y-3">
-              <Input
-                placeholder="Name"
-                value={editItem.name}
-                onChange={(e) =>
-                  setEditItem({ ...editItem, name: e.target.value })
-                }
-              />
-
-              <Textarea
-                placeholder="Description"
-                value={editItem.description ?? ""}
-                onChange={(e) =>
-                  setEditItem({ ...editItem, description: e.target.value })
-                }
-              />
-
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                  Nu.
-                </span>
-
-                <Input
-                  placeholder="0.00"
-                  className="pl-12"
-                  value={editItem.price}
-                  onChange={(e) =>
-                    setEditItem({
-                      ...editItem,
-                      price:
-                        e.target.value === "" ? "" : Number(e.target.value),
-                    })
-                  }
-                />
-              </div>
-
-              <Input
-                type="file"
-                onChange={(e) => setFile(e.target.files?.[0] || null)}
-              />
-
-              <Button onClick={saveItem}>Save</Button>
+          )}
+        </DialogContent>
+      </Dialog>
+    </SidebarProvider>
+  );
+}
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             on>
             </div>
           )}
         </DialogContent>

@@ -21,7 +21,7 @@ export const menuSections: FoodMenuSection[] = [
       {
         name: "Kewa Datshi",
         price: "Nu. 180",
-        image: "/BC.png",
+        image: "/o.png",
         description:
           "A classic Bhutanese comfort plate with potatoes, cheese, and a warm chili finish.",
         ingredients: ["Bhutanese cheese", "potato", "green chili", "butter"],
@@ -30,7 +30,7 @@ export const menuSections: FoodMenuSection[] = [
       {
         name: "Ema Datshi",
         price: "Nu. 190",
-        image: "/bg.png",
+        image: "/just.png",
         description:
           "Creamy chili-and-cheese stew with a bright, lingering heat and soft richness.",
         ingredients: ["Bhutanese cheese", "ema chili", "onion", "garlic"],
@@ -39,7 +39,7 @@ export const menuSections: FoodMenuSection[] = [
       {
         name: "Shakam Paa",
         price: "Nu. 220",
-        image: "/bg.png",
+        image: "/k.png",
         description:
           "Smoked dried beef cooked down with chili, radish, and mountain aromatics.",
         ingredients: ["dried beef", "radish", "chili", "aromatic spices"],
@@ -48,7 +48,7 @@ export const menuSections: FoodMenuSection[] = [
       {
         name: "Phaksha Paa",
         price: "Nu. 240",
-        image: "/bg.png",
+        image: "/o.png",
         description:
           "Tender pork with radish and chili for a deep, savory bite.",
         ingredients: ["pork", "radish", "dried chili", "garlic"],

@@ -116,7 +116,7 @@ export function ItemDetail({ item, onBack }: ItemDetailProps) {
               alt={item.name}
               fill
               priority
-              className="object-cover object-center rounded-b-lg lg:rounded-l-lg lg:rounded-r-none"
+              className="object-contain"
             />
           </div>
         </>

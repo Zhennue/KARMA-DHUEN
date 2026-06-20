@@ -7,14 +7,14 @@ type Props = {
   onDelete: (item: MenuItem) => void;
 };
 
-export function ItemCard({ item, onEdit, onDelete }: Props) {
+export function ItemCard({ item, onEdit, onDelete = () => {}, }: Props) {
   return (
-    <div className="group overflow-hidden rounded-2xl border bg-card hover:shadow-lg transition">
+    <div className="group overflow-hidden rounded border bg-card transition">
       <div className="aspect-square overflow-hidden">
         <img
           src={item.image_url || ""}
           alt={item.name}
-          className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+          className="h-full w-full object-contain transition duration-300 group-hover:scale-105"
         />
       </div>
 

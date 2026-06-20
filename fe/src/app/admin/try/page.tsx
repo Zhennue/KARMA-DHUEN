@@ -16,10 +16,20 @@ import { CategoryDialog } from "./components/category-dialog";
 import { ItemDialog } from "./components/item-dialog";
 import { DeleteDialog } from "./components/delete-dialog";
 
+import { useEffect, useState } from "react";
+
 export default function Page() {
   const menu = useMenu();
 
   const isEmpty = menu.categories.length === 0;
+
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (menu.categories.length > 0 && selectedCategory === null) {
+      setSelectedCategory(menu.categories[0].id);
+    }
+  }, [menu.categories, selectedCategory]);
 
   return (
     <SidebarProvider>
@@ -28,16 +38,17 @@ export default function Page() {
       <SidebarInset>
         <SiteHeader />
 
-        <main className="flex-1 overflow-y-auto bg-muted/20 p-6 space-y-6">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden bg-muted/20 p-6 space-y-6">
           <PageHeader onAddCategory={menu.openCreateCategory} />
-
           {/* CATEGORY STRIP */}
           <CategoryStrip
             categories={menu.categories}
+            selectedCategory={selectedCategory}
+            onSelect={setSelectedCategory}
             onEdit={menu.openEditCategory}
             onDelete={menu.openDeleteCategory}
           />
-
+          
           {/* EMPTY STATE */}
           {isEmpty ? (
             <div className="flex flex-col items-center justify-center rounded-xl border border-dashed p-16 text-center space-y-4">
@@ -56,7 +67,9 @@ export default function Page() {
           ) : (
             /* CATEGORY SECTION */
             <CategorySection
-              categories={menu.categories}
+              categories={menu.categories.filter(
+                (cat) => cat.id === selectedCategory,
+              )}
               items={menu.items}
               onEditItem={menu.openEditItem}
               onCreateItem={menu.openCreateItem}
@@ -86,10 +99,20 @@ export default function Page() {
 
       {/* CATEGORY DELETE */}
       <DeleteDialog
-        deleteCategoryOpen={menu.deleteCategoryOpen}
-        setDeleteCategoryOpen={menu.setDeleteCategoryOpen}
-        deleteCategory={menu.deleteCategory}
-        deleteCategoryRow={menu.deleteCategoryRow}
+        open={menu.deleteCategoryOpen}
+        setOpen={menu.setDeleteCategoryOpen}
+        title={menu.deleteCategory?.name ?? "Delete category"}
+        description="Are you sure you want to delete this category?"
+        onDelete={menu.deleteCategoryRow}
+      />
+
+      {/* ITEM DELETE */}
+      <DeleteDialog
+        open={menu.deleteItemOpen}
+        setOpen={menu.setDeleteItemOpen}
+        title={menu.deleteItem?.name ?? "Delete item"}
+        description="Are you sure you want to delete this item?"
+        onDelete={menu.deleteItemRow}
       />
     </SidebarProvider>
   );

@@ -35,6 +35,7 @@ export function useMenu() {
   const [deleteCategoryOpen, setDeleteCategoryOpen] = React.useState(false);
 
   const [deleteItem, setDeleteItem] = React.useState<MenuItem | null>(null);
+  const [deleteItemOpen, setDeleteItemOpen] = React.useState(false);
 
   /* ---------------- LOAD ---------------- */
 
@@ -57,9 +58,34 @@ export function useMenu() {
     setLoading(false);
   };
 
+  const openDeleteItem = (item: MenuItem) => {
+    setDeleteItem(item);
+    setDeleteItemOpen(true);
+  };
+
   React.useEffect(() => {
     load();
   }, []);
+
+  /* ---------------- STORAGE DELETE (NEW) ---------------- */
+
+  const deleteFromStorage = async (url: string, bucket: string) => {
+    try {
+      if (!url) return;
+
+      const path = url.split(`/storage/v1/object/public/${bucket}/`)[1];
+
+      if (!path) return;
+
+      const { error } = await supabase.storage.from(bucket).remove([path]);
+
+      if (error) {
+        console.error("Storage delete error:", error.message);
+      }
+    } catch (err) {
+      console.error("Storage delete failed:", err);
+    }
+  };
 
   /* ---------------- IMAGE PIPELINE ---------------- */
 
@@ -81,7 +107,6 @@ export function useMenu() {
       }
 
       const webpFile = await convertToWebP(processedFile, 0.85);
-
       const fileName = `${Date.now()}.webp`;
 
       const { data, error } = await supabase.storage
@@ -109,7 +134,7 @@ export function useMenu() {
     }
   };
 
-  /* ---------------- CATEGORY (FIXED) ---------------- */
+  /* ---------------- CATEGORY ---------------- */
 
   const saveCategory = async () => {
     if (!editCategory) return;
@@ -161,10 +186,15 @@ export function useMenu() {
     }
   };
 
-  /* ---------------- DELETE CATEGORY ---------------- */
+  /* ---------------- DELETE CATEGORY (FIXED) ---------------- */
 
   const deleteCategoryRow = async () => {
     if (!deleteCategory) return;
+
+    // delete image from storage
+    if (deleteCategory.image_url) {
+      await deleteFromStorage(deleteCategory.image_url, "menu_categories");
+    }
 
     const { error } = await menuService.deleteCategory(deleteCategory.id);
 
@@ -173,6 +203,7 @@ export function useMenu() {
     setCategories((p) => p.filter((c) => c.id !== deleteCategory.id));
 
     toast.success("Category deleted");
+
     setDeleteCategory(null);
     setDeleteCategoryOpen(false);
   };
@@ -225,12 +256,15 @@ export function useMenu() {
     setIsNewItem(false);
   };
 
-  const openDeleteItem = (item: MenuItem) => {
-    setDeleteItem(item);
-  };
+  /* ---------------- DELETE ITEM (FIXED) ---------------- */
 
   const deleteItemRow = async () => {
     if (!deleteItem) return;
+
+    // delete image from storage
+    if (deleteItem.image_url) {
+      await deleteFromStorage(deleteItem.image_url, "menu_items");
+    }
 
     const { error } = await menuService.deleteItem(deleteItem.id);
 
@@ -239,10 +273,12 @@ export function useMenu() {
     setItems((p) => p.filter((i) => i.id !== deleteItem.id));
 
     toast.success("Item deleted");
+
     setDeleteItem(null);
+    setDeleteItemOpen(false);
   };
 
-  /* ---------------- OPEN MODALS ---------------- */
+  /* ---------------- MODALS ---------------- */
 
   const openCreateCategory = () => {
     setEditCategory({ id: 0, name: "", image_url: "" });
@@ -275,7 +311,6 @@ export function useMenu() {
 
   return {
     loading,
-
     categories,
     items,
 
@@ -291,12 +326,14 @@ export function useMenu() {
     deleteCategory,
     deleteCategoryOpen,
     setDeleteCategoryOpen,
-    openDeleteCategory,
     deleteCategoryRow,
 
     deleteItem,
-    openDeleteItem,
+    deleteItemOpen,
+    setDeleteItemOpen,
     deleteItemRow,
+
+    setDeleteItem,
 
     saveCategory,
     saveItem,
@@ -307,5 +344,8 @@ export function useMenu() {
     openEditItem,
 
     reload: load,
+
+    openDeleteItem,
+    openDeleteCategory,
   };
 }

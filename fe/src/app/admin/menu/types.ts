@@ -9,6 +9,6 @@ export type MenuItem = {
   category_id: number;
   name: string;
   description: string | null;
-  price: number;
+  price: number | "";
   image_url: string | null;
 };

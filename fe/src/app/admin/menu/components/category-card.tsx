@@ -15,7 +15,7 @@ export function CategoryCard({ category, onEdit, onDelete, active }: Props) {
         group w-40 overflow-hidden rounded border bg-card
         transition-all duration-300
         hover:-translate-y-1 hover:shadow-lg
-        ${active ? "ring-2 ring-primary" : ""}
+        ${active ? "ring-primary" : ""}
       `}
     >
       {/* IMAGE */}
